@@ -1,0 +1,90 @@
+<project name="Ida" default="build" basedir=".">
+    <description>
+	Build file for Ida* Puzzle
+    </description>
+
+    <!-- PLEASE CHANGE THESE VALUES! -->
+    <property name="studentName" value="YOUR_NAME_HERE" />
+	<property name="vunetID" value="YOUR_VUNET_ID_HERE" />
+
+    <!-- PLEASE INCREMENT THIS VALUE IF YOU HAPPEN TO SUBMIT AGAIN! -->
+    <property name="submitNumber" value="1" />
+
+    <property name="src" location="src" />
+    <property name="tmp" location="tmp" />
+    <property name="lib" location="lib" />
+    <property name="ipl" location="ipl-2.3/lib" />
+    <property name="jar" location="lib/ida.jar" />
+    <property name="zipPrefix" value="${vunetID}_${studentName}_${submitNumber}" />
+    
+
+    <path id="default.classpath">
+        <fileset dir="${ipl}">
+            <include name="*.jar" />
+        </fileset>
+        <fileset dir="${lib}">
+            <include name="*.jar" />
+        </fileset>
+        <pathelement path="${tmp}" />
+    </path>
+
+    <target name="build" description="Build Application" depends="clean,compile">
+    </target>
+
+
+
+    <!--
+    Compile
+    -->
+    <target name="compile">
+        <mkdir dir="${tmp}" />
+        <mkdir dir="${lib}" />
+
+        <!-- Copy external libraries to lib directory -->
+        <copy todir="${lib}">
+            <fileset dir="${ipl}" />
+        </copy>
+
+        <!-- Compile the java code from ${src} into ${tmp} -->
+        <javac srcdir="${src}" destdir="${tmp}" debug="on" classpathref="default.classpath">
+        </javac>
+
+        <!-- Create jar file -->
+
+        <jar destfile="${jar}" basedir="${tmp}" includes="**/*.class">
+        </jar>
+
+
+        <!-- rewrite applications using IbisC 
+        	(optional step for ipl applications) -->
+        <java classname="ibis.compile.Ibisc" taskname="Ibisc" failonerror="true" fork="true">
+            <arg line="${jar}" />
+            <classpath refid="default.classpath" />
+        </java>
+
+
+        <delete dir="${tmp}" />
+    </target>
+
+    <!--
+       Clean up everything
+    -->
+    <target name="clean" description="Clean up">
+        <delete dir="${tmp}" />
+        <delete dir="${lib}" />
+    </target>
+
+    <!--
+    	Make a Distribution
+    -->
+    <target name="dist" description="Make a Distribution">
+        <delete file="${zipPrefix}.zip" />
+
+
+        <zip destfile="${zipPrefix}.zip">
+            <zipfileset dir="." prefix="${zipPrefix}" includes="docs/**,build.xml,ipl-2.3/lib/**,log4j.properties,src/**" />
+            <zipfileset dir="." prefix="${zipPrefix}" filemode="755" includes="bin/**" />
+        </zip>
+    </target>
+
+</project>

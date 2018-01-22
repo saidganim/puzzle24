@@ -1,0 +1,9 @@
+Running IDA*, initial board:
+ 22  17  21  16  20 
+ 18   6   7  15  10 
+ 23  11  12   5   1 
+ ..  13   8   2   3 
+ 24  19  14   9   4 
+
+Try bound 91 93 95 97 99 101 103 
+result is 1 solutions of 103 steps

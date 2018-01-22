@@ -1,0 +1,31 @@
+IDA* Puzzle solver assignment for the Parallel Programming Practical(PPP)
+
+This template contains everything required for the java assignment, including the IPL. 
+
+Content:
+
+- bin/java-run		script to run java applications (with correct classpath)
+			start from the same dir as this README
+
+- bin/ipl-server	script to start an "ipl-server" (see IPL documentation
+			for more info)
+
+- build.xml		build your application using the command "ant". Already
+			includes everything required to build IPL apps. It
+			adds ipl-2.3/lib/* to the classpath, and "rewrites"
+			the jar file to optimize performance
+
+			Also contains a "dist" target ("ant dist") to create
+			a distribution suitable for submission
+
+- docs			put your documentation here.
+
+- ipl-2.3		IPL distribution identical to the one on the ibis site
+			includes documentation and examples
+
+- log4j.properties	settings file for Log4J (see http://logging.apache.org)
+			needed for the IPL, automatically used by scripts in
+			bin
+
+- src			source of the sequential application. Your code should
+			also go here (empty packages provided)

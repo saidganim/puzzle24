@@ -1,0 +1,108 @@
+Here is a list of Ibis releases.
+2.3 (24 May 2012)
+   Some small changes to the IPL:
+   - WriteMessage now has a writeByteBuffer method, ReadMessage now has a
+     readByteBuffer method.
+   - IbisFactory now allows '|' and ';' as separator character in a list of
+     ibis implementations, in addition to ','.
+   - there now are base classes for all Ibis exceptions: IbisException, IbisIOException,
+     and IbisRuntimeException.
+   - Added some %-escapes in the LOCATION property that allow inclusion of hostname,
+     domain, et cetera.
+   TCP Ibis no longer can use smartsockets for its connections, since we have SmartSockets Ibis
+   for that.
+   Various additions that enable f.i. IbisDeploy to monitor a running IPL application.
+   Ibis Util now contains a simple RPC implementation.
+   The bytecode rewriter for Ibis serialization, which was based on BCEL, has been replaced
+   with one based on ASM, which seems to be the current bytecode manipulation library of choice,
+   and which also has good Java 1.7 support. The Ibisc mechanism now supports both BCEL and ASM,
+   The included BCEL version has been replaced with a newer version.
+   Fixed a possible race when doing sequences of connect/disconnect calls.
+   Fixed a possible deadlock in one-to-one, explicit receive connections.
+   Fixed a couple of bugs in Ibis serialization.
+   Ibis serialization now also supports ClassPath java libraries (and gcj).
+
+2.2 (12 Nov 2009)
+   Many changes and fixes. There now is a separate smartsockets Ibis,
+   which is the default Ibis.
+   From the applications point-of-view, the RegistryEventHandler
+   now has some new methods, a.o. when a pool is closed or terminates.
+   This affects all applications that implement a RegistryEventHandler,
+   because they have to implement the new methods, possibly with an
+   empty body.
+   There are also various experimental changes that may or may not
+   re-appear in later editions. These are all clearly marked in the javadoc.
+
+2.1.1 (16 May 2008)
+   Fixes a couple of bugs in release 2.1, and ibis-server now supports
+   getting statistics from services.
+
+2.1 (14 April 2008)
+   This release mostly fixes some problems in the 2.0 release.
+   Also, there are a few (upwards compatible) additions to the IPL,
+   and the internals of the registry have changed considerably.
+
+2.0 (10 November 2007)
+   This is the first release of Ibis in four years that changes the IPL.
+   Significant changes to the IPL include:
+   - The StaticProperties mechanism is now split up into "properties"
+     and "capabilities".
+   - A IbisFactory is now used to create ibisses.
+   - Port types are now create before, not after an ibis is created.
+   - ReceivePorts no longer have a single global namespace.
+     Instead each ibis instance has a local namespace for its receive
+     ports.
+   - The registry no longer has functionality for "looking up" or
+     "listing" IbisIdentifiers and ReceivePortIdentifiers. This makes
+     implementations of the registry much more scalable and stable.
+
+   Other changes to Ibis include:
+   - The distribution of Ibis now only includes The IPL and TCP based
+     implementations. The programming models, and any additional
+     implementations are all released separately.
+   - Support for the Smartsockets library. This allows Ibisses to
+     traverse firewalls and NATS more reliable than before.
+
+1.4 (Sep 15, 2006)
+   This is the first release that is also available as a binary release.
+   It contains an almost completely rewritten version of Satin, and lots
+   of fixes. 
+
+1.3 (Feb 14, 2006)
+   This release contains the following additions:
+   - shared objects for Satin. This is a replacement (and major improvement)
+     of the TupleSpace, which was a hack, really. The TupleSpace is still there,
+     but it is deprecated and will probably not be there anymore in the next
+     Ibis release.
+   - Improved/rewritten connection setup code.
+   - Fixed various scalability issues which came up when we tried to run some
+     applications on hundreds of nodes. The biggest bottleneck was the
+     nameserver, which we now made multithreaded. Another major bottleneck
+     was the connection setup in Satin, for which we now added code to set up
+     connections lazily.
+   
+1.2.1 (Dec 2, 2005)
+   This is a quick maintainance release for 1.2, fixing a couple of bugs.
+
+1.2 (Sep 20, 2005)
+   This release adds MPJ/Ibis, a pure Java implementation of he MPJ programming
+   interface that has been defined by the Java Grande forum to provide MPI-like
+   message passing for Java applications. With respect to 1.1, there are also
+   a couple of bug fixes.
+
+1.1 (Jun 13, 2005)
+   This is mostly a maintainance release for 1.0. It fixes several bugs,
+   and has some clarifications in the Javadoc.
+
+1.0 (Nov 24, 2004)
+   The first Ibis release. This release includes the IPL, and the following
+   implementations of it:
+   - TcpIbis, which is an implementation on top of TCP,
+   - NioIbis, which is an implementation on top of Java NIO.
+   - MessagePassing Ibis, which is an implementation on top of Panda (and
+     MPI, but that is not really tested).
+   - NetIbis, which can do TCP, UDP, GM, and probably others.
+   This release also contains Ibis RMI, which is a (incomplete)
+   re-implementation of Java RMI, Satin, which is an implementation of the
+   divide-and-conquer programming model, and GMI, which is an RMI enhanced
+   with group communication.

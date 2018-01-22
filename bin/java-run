@@ -1,0 +1,5 @@
+#!/bin/bash
+
+#run java, add both local working dir (for log4j.properties) and lib dir to
+#classpath
+exec java -classpath ".:lib/*" $@
