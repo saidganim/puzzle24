@@ -76,7 +76,7 @@ public class Ida implements MessageUpcall{
     public void upcall(ReadMessage message) throws IOException, ClassNotFoundException {
         MessageObject readMessage = (MessageObject) message
                 .readObject();
-
+        ReceivePortIdentifier requestor = readMessage.requestor;
         System.err.println("received request from: " + readMessage);
         message.finish();
         MessageObject response = new MessageObject();
@@ -95,7 +95,15 @@ public class Ida implements MessageUpcall{
             if(masterJobsList.size() == 0)
                 jobListBusy.notify(); // Notify Master node main thread that all work is done
         }
+        SendPort replyPort = myIbis.createSendPort(replyPortType);
 
+        // connect to the requestor's receive port
+        replyPort.connect(requestor);
+
+        // create a reply message
+        WriteMessage reply = replyPort.newMessage();
+        reply.writeObject((response));
+        reply.finish();
     }
 
     public void masterNode(Board initState) throws Exception {
@@ -129,6 +137,7 @@ public class Ida implements MessageUpcall{
         WriteMessage request = sendPort.newMessage();
         MessageObject jobRequest = new MessageObject();
         jobRequest.messageType = MessageObject.message_id.JOB_STEALING;
+        jobRequest.requestor = receivePort.identifier();
         request.writeObject(jobRequest);
         request.finish();
 

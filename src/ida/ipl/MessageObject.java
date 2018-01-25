@@ -1,6 +1,8 @@
 package ida.ipl;
 
 
+import ibis.ipl.ReceivePortIdentifier;
+
 import java.io.Serializable;
 
 import static ida.ipl.MessageObject.message_id.*;
@@ -15,6 +17,7 @@ public class MessageObject implements Serializable{
 
    public message_id messageType = EMPTY_MESSAGE; // by default
    public Object data = null; // by default
+   public ReceivePortIdentifier requestor;
 
    public String toString(){
       StringBuilder res = new StringBuilder();
