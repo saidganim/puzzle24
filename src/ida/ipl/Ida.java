@@ -13,6 +13,7 @@ public class Ida implements MessageUpcall{
     private List<Board> masterJobsList;
     private Boolean jobListBusy = false;
     private int solutionsNum = 0;
+    long solutionsCounter = 0;
 
     public Ida(String[] args) throws Exception {
         String fileName = null;
@@ -138,10 +139,8 @@ public class Ida implements MessageUpcall{
 
     @Override
     public void upcall(ReadMessage message) throws IOException, ClassNotFoundException {
-        
-	if(masterJobsList != null && masterJobsList.size() <= 0)
-                synchronized(jobListBusy){jobListBusy.notify();} // Notify Master node main thread that all work is done
-	MessageObject readMessage = (MessageObject) message
+        // Notify Master node main thread that all work is done
+	    MessageObject readMessage = (MessageObject) message
                 .readObject();
         message.finish();
     	ReceivePortIdentifier requestor = readMessage.requestor;
@@ -159,8 +158,13 @@ public class Ida implements MessageUpcall{
             }
         } else if (readMessage.messageType == MessageObject.message_id.SOLUTIONS_NUM){
             Pair<Integer, Integer> res = (Pair<Integer, Integer>)readMessage.data;
+            --solutionsCounter;
             solutionsNum += res.getKey();
         }
+
+        if(masterJobsList != null && masterJobsList.size() <= 0 && solutionsCounter == 0)
+            synchronized(jobListBusy){jobListBusy.notify();}
+
         SendPort replyPort = myIbis.createSendPort(replyPortType);
 	    replyPort.connect(requestor);
         WriteMessage reply = replyPort.newMessage();
@@ -181,6 +185,7 @@ public class Ida implements MessageUpcall{
             // enable upcalls
             receiver.enableMessageUpcalls();
             masterJobsList = getjobs(initState, useCache);
+            solutionsCounter = masterJobsList.size();
             startTime = System.currentTimeMillis();
             while(masterJobsList.size() > 0)
                 jobListBusy.wait();
