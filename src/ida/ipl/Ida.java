@@ -23,9 +23,6 @@ public class Ida implements MessageUpcall{
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("--nocache")) {
                 cache = false;
-            } else {
-                System.err.println("No such option: " + args[i]);
-                System.exit(1);
             }
         }
 
@@ -40,7 +37,7 @@ public class Ida implements MessageUpcall{
                 } else if (args[i].equals("--length")) {
                     i++;
                     length = Integer.parseInt(args[i]);
-                } else {
+                } else if(!args[i].equals("--nocache")){
                     System.err.println("No such option: " + args[i]);
                     System.exit(1);
                 }
