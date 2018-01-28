@@ -1,8 +1,5 @@
 package ida.ipl;
-
 import ibis.ipl.*;
-import javafx.util.Pair;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
