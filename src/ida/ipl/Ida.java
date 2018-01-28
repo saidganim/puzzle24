@@ -241,6 +241,7 @@ public class Ida implements MessageUpcall{
 
     private List<Board> __getjobs(Board boardState, int deepLevel){
         ArrayList<Board> result = new ArrayList<Board>();
+        boardState.setBound(boardState.distance());
         if(deepLevel == 0){
             Board[] children = boardState.makeMoves();
             for (int i = 0; i < children.length; i++) {
@@ -262,6 +263,7 @@ public class Ida implements MessageUpcall{
 
     private List<Board> __getjobs(Board boardState, int deepLevel, BoardCache cache){
         ArrayList<Board> result = new ArrayList<Board>();
+        boardState.setBound(boardState.distance());
         if(deepLevel == 0){
             Board[] children = boardState.makeMoves(cache);
             for (int i = 0; i < children.length; i++) {
