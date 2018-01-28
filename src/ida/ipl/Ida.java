@@ -160,7 +160,7 @@ public class Ida implements MessageUpcall{
                 if(solutionsSteps > res.getValue()){
                     solutionsNum += res.getKey();
                     solutionsSteps = res.getValue();
-                    masterJobsList = new ArrayList<>(); // using empty list instead
+                    masterJobsList = new ArrayList<Board>(); // using empty list instead
                 }
 
             }
