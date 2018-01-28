@@ -248,7 +248,6 @@ public class Ida implements MessageUpcall{
             Board[] children = boardState.makeMoves();
             for (int i = 0; i < children.length; i++) {
                 if (children[i] != null) {
-                    children[i].dropDepth();
                     result.add(children[i]);
                 }
             }
@@ -270,7 +269,6 @@ public class Ida implements MessageUpcall{
             Board[] children = boardState.makeMoves(cache);
             for (int i = 0; i < children.length; i++) {
                 if (children[i] != null) {
-                    children[i].dropDepth();
                     result.add(children[i]);
                 }
             }
