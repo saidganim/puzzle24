@@ -209,6 +209,13 @@ public final class Board implements Serializable {
 	}
 
 	/**
+	 * Makes depth equal 0. Needed for job owner
+	 */
+	public void dropDepth(){
+		depth = 0;
+	}
+
+	/**
 	 * get value of tile at given position
 	 */
 	private byte getBoardValue(int x, int y) {
