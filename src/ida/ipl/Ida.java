@@ -13,6 +13,7 @@ public class Ida implements MessageUpcall{
     private List<Board> masterJobsList;
     private Boolean jobListBusy = false;
     private int solutionsNum = 0;
+    private int solutionsSteps = Integer.MAX_VALUE;
     long solutionsCounter = 0;
 
     public Ida(String[] args) throws Exception {
@@ -144,23 +145,29 @@ public class Ida implements MessageUpcall{
         MessageObject response = new MessageObject();
         if(requestor == null)
 	    	return;
-	    if(readMessage.messageType == MessageObject.message_id.JOB_STEALING){
-            // Provide slave with one another job
-            synchronized (jobListBusy){
-                if(masterJobsList.size() > 0){
-                    response.messageType = MessageObject.message_id.JOB_BOARD;
-                    response.data = masterJobsList.get(0);
-                    masterJobsList.remove(0);
+        synchronized (masterJobsList){
+            if(readMessage.messageType == MessageObject.message_id.JOB_STEALING){
+                // Provide slave with one another job
+                synchronized (jobListBusy){
+                    if(masterJobsList.size() > 0){
+                        response.messageType = MessageObject.message_id.JOB_BOARD;
+                        response.data = masterJobsList.get(0);
+                        masterJobsList.remove(0);
+                    }
                 }
-            }
-        } else if (readMessage.messageType == MessageObject.message_id.SOLUTIONS_NUM){
-            Pair<Integer, Integer> res = (Pair<Integer, Integer>)readMessage.data;
-            --solutionsCounter;
-            solutionsNum += res.getKey();
-        }
+            } else if (readMessage.messageType == MessageObject.message_id.SOLUTIONS_NUM){
+                Pair<Integer, Integer> res = (Pair<Integer, Integer>)readMessage.data;
+                if(solutionsSteps > res.getValue()){
+                    solutionsNum += res.getKey();
+                    solutionsSteps = res.getValue();
+                    masterJobsList = new ArrayList<>(); // using empty list instead
+                }
 
-        if(masterJobsList != null && masterJobsList.size() <= 0 && solutionsCounter == 0)
-            synchronized(jobListBusy){jobListBusy.notify();}
+            }
+
+            if(masterJobsList != null && masterJobsList.size() <= 0 && solutionsCounter == 0)
+                synchronized(jobListBusy){jobListBusy.notify();}
+        }
 
         SendPort replyPort = myIbis.createSendPort(replyPortType);
 	    replyPort.connect(requestor);
