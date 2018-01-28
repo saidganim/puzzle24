@@ -1,6 +1,7 @@
 package ida.ipl;
 
 import ibis.ipl.*;
+import javafx.util.Pair;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,30 +10,59 @@ import java.util.List;
 public class Ida implements MessageUpcall{
 
     // Level of deepness master node should go in for generating the jobs
-    static int MAXHOPS = 10;
+    static int MAXHOPS = 2;
 
     private Ibis myIbis;
     private List<Board> masterJobsList;
     private Boolean jobListBusy = false;
     private int solutionsNum = 0;
 
-    public Ida(Board initialBoard, boolean useCache) throws Exception {
-        // Create an ibis instance.
-        // Notice createIbis uses varargs for its parameters.
-        myIbis = IbisFactory.createIbis(ibisCapabilities, null,
-                requestPortType, replyPortType);
+    public Ida(String[] args) throws Exception {
+        String fileName = null;
+        boolean cache = true;
+        int length = 103;
 
-        // Elect a server
-        IbisIdentifier server = myIbis.registry().elect("Server");
-
-        // If I am the server, run server, else run client.
-        if (server.equals(myIbis.identifier())) {
-            masterNode(initialBoard);
-        } else {
-            slaveNode(server);
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].equals("--nocache")) {
+                cache = false;
+            } else {
+                System.err.println("No such option: " + args[i]);
+                System.exit(1);
+            }
         }
 
-        // End ibis.
+        myIbis = IbisFactory.createIbis(ibisCapabilities, null,
+            requestPortType, replyPortType);
+        IbisIdentifier server = myIbis.registry().elect("Server");
+
+        if (server.equals(myIbis.identifier())) {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i].equals("--file")) {
+                    fileName = args[++i];
+                } else if (args[i].equals("--length")) {
+                    i++;
+                    length = Integer.parseInt(args[i]);
+                } else {
+                    System.err.println("No such option: " + args[i]);
+                    System.exit(1);
+                }
+            }
+            Board initialBoard = null;
+            if (fileName == null) {
+                initialBoard = new Board(length);
+            } else {
+                try {
+                    initialBoard = new Board(fileName);
+                } catch (Exception e) {
+                    System.err
+                            .println("could not initialize board from file: " + e);
+                    System.exit(1);
+                }
+            }
+            masterNode(initialBoard, cache);
+        } else {
+            slaveNode(server, cache);
+        }
         myIbis.end();
     }
     /**
@@ -46,20 +76,18 @@ public class Ida implements MessageUpcall{
      * Port type used for sending a reply back
      */
     PortType replyPortType = new PortType(PortType.COMMUNICATION_RELIABLE,
-            PortType.SERIALIZATION_DATA, PortType.RECEIVE_EXPLICIT,
-            PortType.CONNECTION_ONE_TO_ONE);
+            PortType.SERIALIZATION_OBJECT, PortType.RECEIVE_EXPLICIT,
+            PortType.CONNECTION_MANY_TO_MANY);
 
     IbisCapabilities ibisCapabilities = new IbisCapabilities(
             IbisCapabilities.ELECTIONS_STRICT);
 
     private static int solutions(Board board) {
-        if (board.distance() == 0) {
+        if (board.distance() == 0)
             return 1;
-        }
 
-        if (board.distance() > board.bound()) {
+        if (board.distance() > board.bound())
             return 0;
-        }
 
         Board[] children = board.makeMoves();
         int result = 0;
@@ -72,15 +100,58 @@ public class Ida implements MessageUpcall{
         return result;
     }
 
+    private static int solutions(Board board, BoardCache cache) {
+        if (board.distance() == 0)
+            return 1;
+
+        if (board.distance() > board.bound())
+            return 0;
+
+        Board[] children = board.makeMoves(cache);
+        int result = 0;
+
+        for (int i = 0; i < children.length; i++) {
+            if (children[i] != null) {
+                result += solutions(children[i], cache);
+            }
+        }
+        cache.put(children);
+        return result;
+    }
+
+    private static Pair<Integer, Integer> solve(Board board, boolean useCache) {
+        BoardCache cache = null;
+        if (useCache) {
+            cache = new BoardCache();
+        }
+        int bound = board.distance();
+        int solutions;
+        do {
+            board.setBound(bound);
+            if (useCache) {
+                solutions = solutions(board, cache);
+            } else {
+                solutions = solutions(board);
+            }
+            bound += 2;
+        } while (solutions == 0);
+        return new Pair<Integer, Integer>(solutions, board.bound());
+    }
+
+
     @Override
     public void upcall(ReadMessage message) throws IOException, ClassNotFoundException {
-        MessageObject readMessage = (MessageObject) message
+        
+	if(masterJobsList != null && masterJobsList.size() <= 0)
+                synchronized(jobListBusy){jobListBusy.notify();} // Notify Master node main thread that all work is done
+	MessageObject readMessage = (MessageObject) message
                 .readObject();
-        ReceivePortIdentifier requestor = readMessage.requestor;
-        System.err.println("received request from: " + readMessage);
         message.finish();
+    	ReceivePortIdentifier requestor = readMessage.requestor;
         MessageObject response = new MessageObject();
-        if(readMessage.messageType == MessageObject.message_id.JOB_STEALING){
+        if(requestor == null)
+	    	return;
+	    if(readMessage.messageType == MessageObject.message_id.JOB_STEALING){
             // Provide slave with one another job
             synchronized (jobListBusy){
                 if(masterJobsList.size() > 0){
@@ -90,74 +161,68 @@ public class Ida implements MessageUpcall{
                 }
             }
         } else if (readMessage.messageType == MessageObject.message_id.SOLUTIONS_NUM){
-            // Accept solution number from slave node
-            solutionsNum += (Integer)readMessage.data;
-            if(masterJobsList.size() == 0)
-                jobListBusy.notify(); // Notify Master node main thread that all work is done
+            Pair<Integer, Integer> res = (Pair<Integer, Integer>)readMessage.data;
+            solutionsNum += res.getKey();
         }
         SendPort replyPort = myIbis.createSendPort(replyPortType);
-
-        // connect to the requestor's receive port
-        replyPort.connect(requestor);
-
-        // create a reply message
+	    replyPort.connect(requestor);
         WriteMessage reply = replyPort.newMessage();
         reply.writeObject((response));
-        reply.finish();
+	    reply.finish();
+	    replyPort.close();
+
     }
 
-    public void masterNode(Board initState) throws Exception {
+    public void masterNode(Board initState, boolean useCache) throws Exception {
         // Master Node should provide with jobs
         ReceivePort receiver = myIbis.createReceivePort(requestPortType,
                 "server", this);
-
+	    long startTime;
         synchronized (jobListBusy){
             // enable connections
             receiver.enableConnections();
             // enable upcalls
             receiver.enableMessageUpcalls();
-            masterJobsList = getjobs(initState);
-            while(masterJobsList.size() != 0)
+            masterJobsList = getjobs(initState, useCache);
+            startTime = System.currentTimeMillis();
+            while(masterJobsList.size() > 0)
                 jobListBusy.wait();
         }
+	    long endTime = System.currentTimeMillis();
+        System.err.println("Job is done. Solutions number = " + solutionsNum + "; Time spent on task is " + (endTime - startTime));
 
-        System.err.println("Job is done. Solutions number = " + solutionsNum);
-
-        System.err.println("Master Node is started");
     }
 
 
-    public void slaveNode(IbisIdentifier masterNode) throws Exception{
+    public void slaveNode(IbisIdentifier masterNode, boolean useCache) throws Exception{
         SendPort sendPort = myIbis.createSendPort(requestPortType);
         sendPort.connect(masterNode, "server");
-
         ReceivePort receivePort = myIbis.createReceivePort(replyPortType, null);
         receivePort.enableConnections();
-
         WriteMessage request = sendPort.newMessage();
         MessageObject jobRequest = new MessageObject();
         jobRequest.messageType = MessageObject.message_id.JOB_STEALING;
         jobRequest.requestor = receivePort.identifier();
         request.writeObject(jobRequest);
         request.finish();
-
         MessageObject localSolutionResult = new MessageObject();
         localSolutionResult.messageType = MessageObject.message_id.SOLUTIONS_NUM;
-
         ReadMessage reply = receivePort.receive();
         MessageObject job = (MessageObject)reply.readObject();
         reply.finish();
-
         while(job.messageType == MessageObject.message_id.JOB_BOARD){
-            Board initState = (Board)job.data;
-            // handling board
-            localSolutionResult.data = (Integer)solutions(initState);
-            // Sending given result
+            if(job.data == null){
+                sendPort.close();
+                receivePort.close();
+                return;
+            }
+	        Board initState = (Board)job.data;
+            Pair<Integer, Integer> res = solve(initState,useCache);
+            localSolutionResult.data = res;
             request = sendPort.newMessage();
             request.writeObject(localSolutionResult);
             request.finish();
 
-            // Send new request for job stealing and get result
             request = sendPort.newMessage();
             request.writeObject(jobRequest);
             request.finish();
@@ -166,32 +231,13 @@ public class Ida implements MessageUpcall{
             reply.finish();
         }
 
-        // Close ports.
         sendPort.close();
         receivePort.close();
     }
 
-//    public void run(Board initState) throws Exception {
-//// Create an ibis instance.
-//        Ibis ibis = IbisFactory.createIbis(ibisCapabilities, null, requestPortType, replyPortType);
-//
-//        // Elect a server
-//        IbisIdentifier server = ibis.registry().elect("Server");
-//
-//        // If I am the server, run server, else run client.
-//        if (server.equals(ibis.identifier())) {
-//            masterNode(ibis, initState);
-//        } else {
-//            slaveNode(ibis, server);
-//        }
-//
-//        // End ibis.
-//        ibis.end();
-//    }
+    private List<Board> getjobs(Board boardState, boolean useCache){
 
-
-    private List<Board> getjobs(Board boardState){
-        return __getjobs(boardState, MAXHOPS);
+        return useCache? __getjobs(boardState, MAXHOPS, new BoardCache()) : __getjobs(boardState, MAXHOPS);
     }
 
     private List<Board> __getjobs(Board boardState, int deepLevel){
@@ -215,41 +261,28 @@ public class Ida implements MessageUpcall{
     }
 
 
-    public static void main(String[] args) throws Exception {
-        String fileName = null;
-        boolean cache = true;
-        int length = 103;
-
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("--file")) {
-                fileName = args[++i];
-            } else if (args[i].equals("--nocache")) {
-                cache = false;
-            } else if (args[i].equals("--length")) {
-                i++;
-                length = Integer.parseInt(args[i]);
-            } else {
-                System.err.println("No such option: " + args[i]);
-                System.exit(1);
+    private List<Board> __getjobs(Board boardState, int deepLevel, BoardCache cache){
+        ArrayList<Board> result = new ArrayList<Board>();
+        if(deepLevel == 0){
+            Board[] children = boardState.makeMoves(cache);
+            for (int i = 0; i < children.length; i++) {
+                if (children[i] != null) {
+                    result.add(children[i]);
+                }
             }
-        }
-
-        Board initialBoard = null;
-
-        if (fileName == null) {
-            initialBoard = new Board(length);
         } else {
-            try {
-                initialBoard = new Board(fileName);
-            } catch (Exception e) {
-                System.err
-                        .println("could not initialize board from file: " + e);
-                System.exit(1);
+            Board[] children = boardState.makeMoves(cache);
+            for (int i = 0; i < children.length; i++) {
+                if (children[i] != null) {
+                    result.addAll(__getjobs(children[i], deepLevel - 1, cache));
+                }
             }
         }
-        System.out.println("Running IDA*, initial board:");
-        System.out.println(initialBoard);
-        new Ida(initialBoard, cache);
+        return result;
+    }
+
+    public static void main(String[] args) throws Exception {
+        new Ida(args);
 
     }
 }

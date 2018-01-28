@@ -16,12 +16,12 @@ public class MessageObject implements Serializable{
    enum message_id{ JOB_STEALING, SOLUTIONS_NUM, JOB_BOARD, EMPTY_MESSAGE};
 
    public message_id messageType = EMPTY_MESSAGE; // by default
-   public Object data = null; // by default
+   public Serializable data = null; // by default
    public ReceivePortIdentifier requestor;
 
    public String toString(){
       StringBuilder res = new StringBuilder();
-      res.append("MessageObject{messageType");
+      res.append("MessageObject{messageType: ");
       if(messageType == JOB_STEALING)
          res.append("JOB_STEALING");
       else if(messageType == JOB_BOARD)
@@ -29,7 +29,11 @@ public class MessageObject implements Serializable{
       else
          res.append("SOLUTIONS_NUM");
       res.append("; data:");
-      res.append(data.toString());
+      
+	if(data != null)
+		res.append(data.toString());
+	else
+		res.append("null");
       res.append(";}");
       return res.toString();
    }
