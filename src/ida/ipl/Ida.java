@@ -122,7 +122,13 @@ public class Ida implements MessageUpcall{
         }
         int bound = board.distance();
         int solutions;
+        System.out.print("Try bound ");
+        System.out.flush();
+
         do {
+            System.out.print(bound + " ");
+            System.out.flush();
+
             board.setBound(bound);
             if (useCache) {
                 solutions = solutions(board, cache);
