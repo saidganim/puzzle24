@@ -232,11 +232,9 @@ public class Ida implements MessageUpcall{
 	        Board initState = (Board)job.data;
             Pair<Integer, Integer> res = solve(initState,useCache);
             localSolutionResult.data = res;
-            request = sendPort.newMessage();
             request.writeObject(localSolutionResult);
             request.finish();
-
-            request = sendPort.newMessage();
+            
             request.writeObject(jobRequest);
             request.finish();
             reply = receivePort.receive();
