@@ -211,8 +211,13 @@ public final class Board implements Serializable {
 	/**
 	 * Makes depth equal 0. Needed for job owner
 	 */
-	public void dropDepth(){
+	public void dropParams(){
+		bound = 0;
+		prevDx = 0;
+		prevDy = 0;
 		depth = 0;
+		distance = calculateBoardDistance();
+
 	}
 
 	/**

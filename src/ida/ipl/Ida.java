@@ -282,6 +282,7 @@ public class Ida implements MessageUpcall{
             for (int i = 0; i < children.length; i++) {
                 if (children[i] != null) {
                     result.add(children[i]);
+                    children[i].dropParams();
                 }
             }
         } else {
