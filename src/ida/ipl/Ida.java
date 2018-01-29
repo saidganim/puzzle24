@@ -163,10 +163,11 @@ public class Ida implements MessageUpcall{
                 }
             } else if (readMessage.messageType == MessageObject.message_id.SOLUTIONS_NUM){
                 Pair<Integer, Integer> res = (Pair<Integer, Integer>)readMessage.data;
+                System.out.println("GOT RESULT (" + res.getKey() + " ; " + res.getValue() + ")");
                 if(solutionsSteps > res.getValue()){
                     solutionsNum += res.getKey();
                     solutionsSteps = res.getValue();
-                    masterJobsList = new ArrayList<Board>(); // using empty list instead
+                    masterJobsList.clear(); // using empty list instead
                 }
 
             }
