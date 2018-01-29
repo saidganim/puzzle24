@@ -73,7 +73,7 @@ public class Ida implements MessageUpcall{
      */
     PortType replyPortType = new PortType(PortType.COMMUNICATION_RELIABLE,
             PortType.SERIALIZATION_OBJECT, PortType.RECEIVE_EXPLICIT,
-            PortType.CONNECTION_ONE_TO_ONE);
+            PortType.CONNECTION_MANY_TO_ONE);
 
     IbisCapabilities ibisCapabilities = new IbisCapabilities(
             IbisCapabilities.ELECTIONS_STRICT);
