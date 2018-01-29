@@ -220,6 +220,7 @@ public class Ida implements MessageUpcall{
         request.finish();
         MessageObject localSolutionResult = new MessageObject();
         localSolutionResult.messageType = MessageObject.message_id.SOLUTIONS_NUM;
+        localSolutionResult.requestor = receivePort.identifier();
         ReadMessage reply = receivePort.receive();
         MessageObject job = (MessageObject)reply.readObject();
         reply.finish();
