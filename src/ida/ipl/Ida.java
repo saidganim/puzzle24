@@ -13,8 +13,6 @@ public class Ida implements MessageUpcall{
     private List<Board> masterJobsList;
     private Boolean jobListBusy = false;
     private int solutionsNum = 0;
-    private int solutionsSteps = Integer.MAX_VALUE;
-    long solutionsCounter = 0;
 
     public Ida(String[] args) throws Exception {
         String fileName = null;
@@ -26,7 +24,6 @@ public class Ida implements MessageUpcall{
                 cache = false;
             }
         }
-
         myIbis = IbisFactory.createIbis(ibisCapabilities, null,
             requestPortType, replyPortType);
         IbisIdentifier server = myIbis.registry().elect("Server");
@@ -78,23 +75,6 @@ public class Ida implements MessageUpcall{
     IbisCapabilities ibisCapabilities = new IbisCapabilities(
             IbisCapabilities.ELECTIONS_STRICT);
 
-    private static int solutions(Board board) {
-        if (board.distance() == 0)
-            return 1;
-
-        if (board.distance() > board.bound())
-            return 0;
-
-        Board[] children = board.makeMoves();
-        int result = 0;
-
-        for (int i = 0; i < children.length; i++) {
-            if (children[i] != null) {
-                result += solutions(children[i]);
-            }
-        }
-        return result;
-    }
 
     private static int solutions(Board board, BoardCache cache) {
         if (board.distance() == 0)
@@ -102,8 +82,11 @@ public class Ida implements MessageUpcall{
 
         if (board.distance() > board.bound())
             return 0;
-
-        Board[] children = board.makeMoves(cache);
+        Board[] children;
+        if(cache == null)
+            children = board.makeMoves();
+        else
+            children = board.makeMoves(cache);
         int result = 0;
 
         for (int i = 0; i < children.length; i++) {
@@ -133,7 +116,7 @@ public class Ida implements MessageUpcall{
             if (useCache) {
                 solutions = solutions(board, cache);
             } else {
-                solutions = solutions(board);
+                solutions = solutions(board, null);
             }
             bound += 2;
         } while (solutions == 0);
@@ -165,8 +148,8 @@ public class Ida implements MessageUpcall{
                 Pair<Integer, Integer> res = (Pair<Integer, Integer>)readMessage.data;
                 System.out.println("GOT RESULT (" + res.getKey() + " ; " + res.getValue() + ")");
                 solutionsNum += res.getKey();
-                solutionsSteps = res.getValue();
                 masterJobsList.clear(); // using empty list instead
+                jobListBusy.notify();
                 return;
             }
 
@@ -194,7 +177,6 @@ public class Ida implements MessageUpcall{
             // enable upcalls
             receiver.enableMessageUpcalls();
             masterJobsList = getjobs(initState, useCache);
-            solutionsCounter = masterJobsList.size();
             startTime = System.currentTimeMillis();
             while(masterJobsList.size() > 0)
                 jobListBusy.wait();
@@ -250,36 +232,19 @@ public class Ida implements MessageUpcall{
 
     private List<Board> getjobs(Board boardState, boolean useCache){
 
-        return useCache? __getjobs(boardState, MAXHOPS, new BoardCache()) : __getjobs(boardState, MAXHOPS);
+        return useCache? __getjobs(boardState, MAXHOPS, new BoardCache()) : __getjobs(boardState, MAXHOPS, null);
     }
-
-    private List<Board> __getjobs(Board boardState, int deepLevel){
-        ArrayList<Board> result = new ArrayList<Board>();
-        boardState.setBound(boardState.distance());
-        if(deepLevel == 0){
-            Board[] children = boardState.makeMoves();
-            for (int i = 0; i < children.length; i++) {
-                if (children[i] != null) {
-                    result.add(children[i]);
-                }
-            }
-        } else {
-            Board[] children = boardState.makeMoves();
-            for (int i = 0; i < children.length; i++) {
-                if (children[i] != null) {
-                    result.addAll(__getjobs(children[i], deepLevel - 1));
-                }
-            }
-        }
-        return result;
-    }
-
 
     private List<Board> __getjobs(Board boardState, int deepLevel, BoardCache cache){
         ArrayList<Board> result = new ArrayList<Board>();
         boardState.setBound(boardState.distance());
         if(deepLevel == 0){
-            Board[] children = boardState.makeMoves(cache);
+            Board[] children;
+            if(cache == null)
+                 children = boardState.makeMoves();
+            else
+                children = boardState.makeMoves(cache);
+
             for (int i = 0; i < children.length; i++) {
                 if (children[i] != null) {
                     result.add(children[i]);
