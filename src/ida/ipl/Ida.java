@@ -153,10 +153,10 @@ public class Ida implements MessageUpcall{
                     jobListBusy.notify();
                     return;
                 }
+                if(masterJobsList != null && masterJobsList.size() == 0)
+                    synchronized(jobListBusy){jobListBusy.notify();}
             }
 
-            if(masterJobsList != null && masterJobsList.size() == 0)
-                synchronized(jobListBusy){jobListBusy.notify();}
         }
 
         SendPort replyPort = myIbis.createSendPort(replyPortType);
