@@ -151,7 +151,7 @@ public class Ida implements MessageUpcall{
                 if(res.getKey() > 0){
                     masterJobsList.clear(); // using empty list instead
                     jobListBusy.notify();
-                    return; 
+                    return;
                 }
             }
 
