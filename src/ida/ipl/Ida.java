@@ -148,9 +148,11 @@ public class Ida implements MessageUpcall{
                 Pair<Integer, Integer> res = (Pair<Integer, Integer>)readMessage.data;
                 System.out.println("GOT RESULT (" + res.getKey() + " ; " + res.getValue() + ")");
                 solutionsNum += res.getKey();
-                masterJobsList.clear(); // using empty list instead
-                jobListBusy.notify();
-                return;
+                if(res.getKey() > 0){
+                    masterJobsList.clear(); // using empty list instead
+                    jobListBusy.notify();
+                    return; 
+                }
             }
 
             if(masterJobsList != null && masterJobsList.size() == 0)
