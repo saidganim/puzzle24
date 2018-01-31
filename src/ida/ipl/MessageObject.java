@@ -18,6 +18,7 @@ public class MessageObject implements Serializable{
    public message_id messageType = EMPTY_MESSAGE; // by default
    public Serializable data = null; // by default
    public ReceivePortIdentifier requestor;
+   public long maximumBound;
 
    public String toString(){
       StringBuilder res = new StringBuilder();

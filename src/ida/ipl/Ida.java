@@ -80,11 +80,11 @@ public class Ida implements MessageUpcall{
             IbisCapabilities.ELECTIONS_STRICT);
 
 
-    private static int solutions(Board board, BoardCache cache) {
+    private int solutions(Board board, BoardCache cache) {
         if (board.distance() == 0)
             return 1;
 
-        if (board.distance() > board.bound())
+        if (board.distance() > board.bound() || board.distance() > solutionsStep)
             return 0;
         Board[] children;
         if(cache == null)
@@ -102,7 +102,7 @@ public class Ida implements MessageUpcall{
         return result;
     }
 
-    private static Pair<Integer, Integer> solve(Board board, boolean useCache) {
+    private Pair<Integer, Integer> solve(Board board, boolean useCache) {
         BoardCache cache = null;
         if (useCache) {
             cache = new BoardCache();
@@ -146,6 +146,7 @@ public class Ida implements MessageUpcall{
                         response.messageType = MessageObject.message_id.JOB_BOARD;
                         response.data = masterJobsList.get(0);
                         masterJobsList.remove(0);
+                        response.maximumBound = solutionsStep;
                     }
                 }
             } else if (readMessage.messageType == MessageObject.message_id.SOLUTIONS_NUM){
@@ -225,6 +226,7 @@ public class Ida implements MessageUpcall{
                 return;
             }
 	        Board initState = (Board)job.data;
+            solutionsStep = job.maximumBound;
             Pair<Integer, Integer> res = solve(initState,useCache);
             System.out.println("SLAVE NODE  SOLVED ONE "  + res.getKey() + " :: " + res.getValue());
             localSolutionResult.data = res;
