@@ -108,7 +108,7 @@ public class Ida implements MessageUpcall{
             cache = new BoardCache();
         }
         int bound = board.distance();
-        int solutions;
+        int solutions = 0;
         System.out.print("Try bound ");
         System.out.flush();
 
@@ -123,7 +123,7 @@ public class Ida implements MessageUpcall{
                 solutions = solutions(board, null);
             }
             bound += 2;
-        } while (solutions == 0);
+        } while (solutions == 0 || bound > solutionsStep);
         return new Pair<Integer, Integer>(solutions, board.bound());
     }
 
