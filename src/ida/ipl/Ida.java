@@ -13,6 +13,9 @@ public class Ida implements MessageUpcall{
     private List<Board> masterJobsList;
     private Boolean jobListBusy = false;
     private int solutionsNum = 0;
+    long solutionsStep = Integer.MAX_VALUE;
+    long startTime;
+    long endTime;
 
     public Ida(String[] args) throws Exception {
         String fileName = null;
@@ -148,11 +151,15 @@ public class Ida implements MessageUpcall{
                 Pair<Integer, Integer> res = (Pair<Integer, Integer>)readMessage.data;
                 System.out.println("GOT RESULT (" + res.getKey() + " ; " + res.getValue() + ")");
                 synchronized(jobListBusy){
-                    solutionsNum += res.getKey();
-                    if(res.getKey() > 0){
-                        masterJobsList.clear(); // using empty list instead
-                        jobListBusy.notify();
-                        return;
+                    if(res.getValue() < solutionsStep){
+                        solutionsNum = res.getKey();
+                        solutionsStep = res.getValue();
+                        endTime = System.currentTimeMillis();
+                    } else if (res.getValue() == solutionsStep){
+                        solutionsNum += res.getKey();
+                        endTime = System.currentTimeMillis();
+                    } else {
+                        // do nothing
                     }
                     if(masterJobsList != null && masterJobsList.size() == 0)
                         jobListBusy.notify();
@@ -175,7 +182,7 @@ public class Ida implements MessageUpcall{
         // Master Node should provide with jobs
         ReceivePort receiver = myIbis.createReceivePort(requestPortType,
                 "server", this);
-	    long startTime;
+
         synchronized (jobListBusy){
             // enable connections
             receiver.enableConnections();
@@ -186,7 +193,6 @@ public class Ida implements MessageUpcall{
             while(masterJobsList.size() > 0)
                 jobListBusy.wait();
         }
-	    long endTime = System.currentTimeMillis();
         System.err.println("Job is done. Solutions number = " + solutionsNum + "; Time spent on task is " + (endTime - startTime));
 
     }
