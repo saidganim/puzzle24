@@ -13,6 +13,7 @@ public class Ida implements MessageUpcall{
     private List<Board> masterJobsList;
     private Boolean jobListBusy = false;
     private int solutionsNum = 0;
+    long jobCounter = 0;
     long solutionsStep = Integer.MAX_VALUE;
     long startTime;
     long endTime;
@@ -148,6 +149,7 @@ public class Ida implements MessageUpcall{
                     }
                 }
             } else if (readMessage.messageType == MessageObject.message_id.SOLUTIONS_NUM){
+                --jobCounter;
                 Pair<Integer, Integer> res = (Pair<Integer, Integer>)readMessage.data;
                 System.out.println("GOT RESULT (" + res.getKey() + " ; " + res.getValue() + ")");
                 synchronized(jobListBusy){
@@ -161,7 +163,7 @@ public class Ida implements MessageUpcall{
                     } else {
                         // do nothing
                     }
-                    if(masterJobsList != null && masterJobsList.size() == 0)
+                    if(jobCounter == 0)
                         jobListBusy.notify();
                 }
 
@@ -189,6 +191,7 @@ public class Ida implements MessageUpcall{
             // enable upcalls
             receiver.enableMessageUpcalls();
             masterJobsList = getjobs(initState, useCache);
+            jobCounter = masterJobsList.size();
             startTime = System.currentTimeMillis();
             while(masterJobsList.size() > 0)
                 jobListBusy.wait();
