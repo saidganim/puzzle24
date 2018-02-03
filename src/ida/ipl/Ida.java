@@ -149,6 +149,15 @@ public class Ida implements MessageUpcall{
                         response.maximumBound = solutionsStep;
                     }
                 }
+
+                SendPort replyPort = myIbis.createSendPort(replyPortType);
+                replyPort.connect(requestor);
+                WriteMessage reply = replyPort.newMessage();
+                reply.writeObject((response));
+                reply.finish();
+                replyPort.close();
+
+
             } else if (readMessage.messageType == MessageObject.message_id.SOLUTIONS_NUM){
                 --jobCounter;
                 Pair<Integer, Integer> res = (Pair<Integer, Integer>)readMessage.data;
@@ -171,14 +180,6 @@ public class Ida implements MessageUpcall{
             }
 
         }
-
-        SendPort replyPort = myIbis.createSendPort(replyPortType);
-	    replyPort.connect(requestor);
-        WriteMessage reply = replyPort.newMessage();
-        reply.writeObject((response));
-	    reply.finish();
-	    replyPort.close();
-
     }
 
     public void masterNode(Board initState, boolean useCache) throws Exception {
